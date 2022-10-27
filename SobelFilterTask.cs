@@ -8,20 +8,21 @@ namespace Recognizer
         {
             var width = g.GetLength(0);
             var height = g.GetLength(1);
+            var halfSxSize = sx.GetLength(0) / 2;
             var result = new double[width, height];
-            for (int x = 1; x < width - 1; x++)
-                for (int y = 1; y < height - 1; y++)
+            for (int x = halfSxSize; x < width - halfSxSize; x++)
+            for (int y = halfSxSize; y < height - halfSxSize; y++)
+            {
+                var gx = 0.0;
+                var gy = 0.0;
+                for (var i = -halfSxSize; i < halfSxSize + 1; i++)
+                for (var j = -halfSxSize; j < halfSxSize + 1; j++)
                 {
-                    // Вместо этого кода должно быть поэлементное умножение матриц sx и полученной транспонированием из неё sy на окрестность точки (x, y)
-                    // Такая операция ещё называется свёрткой (Сonvolution)
-                    var gx = 
-                        -g[x - 1, y - 1] - 2 * g[x, y - 1] - g[x + 1, y - 1] 
-                        + g[x - 1, y + 1] + 2 * g[x, y + 1] + g[x + 1, y + 1];
-                    var gy = 
-                        -g[x - 1, y - 1] - 2 * g[x - 1, y] - g[x - 1, y + 1] 
-                        + g[x + 1, y - 1] + 2 * g[x + 1, y] + g[x + 1, y + 1];
-                    result[x, y] = Math.Sqrt(gx * gx + gy * gy);
+                    gx += g[x + i, y + j] * sx[i + halfSxSize, j + halfSxSize];
+                    gy += g[x + i, y + j] * sx[j + halfSxSize, i + halfSxSize];
                 }
+                result[x, y] = Math.Sqrt(gx * gx + gy * gy);
+            }
             return result;
         }
     }
