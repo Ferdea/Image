@@ -1,52 +1,48 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Recognizer
 {
     public static class ThresholdFilterTask
     {
-        private static List<(double, int, int)> GetPixelList(double[,] original)
+        private static double[] GetPixelsArray(double[,] original)
         {
-            var originalWidth = original.GetLength(0);
-            var originalHeight = original.GetLength(1);
-            var pixelList = new List<(double, int, int)>();
-			
-            for (var i = 0; i < originalWidth; i++)
-            for (var j = 0; j < originalHeight; j++)
+            var width = original.GetLength(0);
+            var height = original.GetLength(1);
+            var pixelsList = new List<double>();
+            
+            for (var i = 0; i < width; i++)
+            for (var j = 0; j < height; j++)
             {
-                pixelList.Add((original[i, j], i, j));
+                pixelsList.Add(original[i, j]);
             }
-			
-            pixelList.Sort();
-            pixelList.Reverse();
-            return pixelList;
+            
+            pixelsList.Sort();
+            return pixelsList.ToArray();
         }
 
-        private static double[,] GetThresholdFilter((int, int) resultSize, 
-            List<(double, int, int)> pixelList, double whitePixelsFraction)
+        private static double GetThreshold(double[] pixels, double whitePixelsFraction)
         {
-            var pixelCount = pixelList.Count;
-            var whiteCount = (int)(pixelCount * whitePixelsFraction);
-            var threshold = whiteCount > 0 ? pixelList[whiteCount - 1].Item1 : 256.0;
-
-            var result = new double[resultSize.Item1, resultSize.Item2];
-            for (var i = 0; i < pixelCount; i++)
-            {
-                if (pixelList[i].Item1 >= threshold)
-                    result[pixelList[i].Item2, pixelList[i].Item3] = 1.0;
-                else
-                    result[pixelList[i].Item2, pixelList[i].Item3] = 0.0;
-            }
-			
-            return result;
+            var whiteCount = (int)(whitePixelsFraction * pixels.Length);
+            if (whiteCount == 0)
+                return double.MaxValue;
+            return pixels[pixels.Length - whiteCount];
         }
-		
+
         public static double[,] ThresholdFilter(double[,] original, double whitePixelsFraction)
         {
-            return GetThresholdFilter(
-                (original.GetLength(0), original.GetLength(1)), 
-                GetPixelList(original), 
-                whitePixelsFraction
-            );
+            var width = original.GetLength(0);
+            var height = original.GetLength(1);
+            var threshold = GetThreshold(GetPixelsArray(original), whitePixelsFraction);
+            var result = new double[width, height];
+            
+            for (var i = 0; i < width; i++)
+            for (var j = 0; j < height; j++)
+            {
+                result[i, j] = original[i, j] >= threshold ? 1 : 0;
+            }
+            
+            return result;
         }
     }
 }
